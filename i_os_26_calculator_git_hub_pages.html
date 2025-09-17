@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>iOS26 Calculator</title>
+  <meta name="description" content="Калькулятор в стиле iOS (футуристичный iOS 26). Работает на GitHub Pages, поддерживает мышь, тач и клавиатуру." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect rx='20' ry='20' x='5' y='5' width='90' height='90' fill='%23000'/%3E%3Ctext x='50' y='62' font-size='56' text-anchor='middle' fill='%23f59e0b' font-family='Arial, Helvetica, sans-serif'%3E%3D%3C/text%3E%3C/svg%3E" />
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #000000;
+      --display: #ffffff;
+      --btn-num: #333333;
+      --btn-fn: #a5a5a5;
+      --btn-op: #f49b0b; /* iOS-like orange */
+      --btn-op-active: #ffd39a;
+      --shadow: 0 10px 25px rgba(0,0,0,.35);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(1200px 800px at 50% -10%, #0b0b0b 0%, #000 55%) fixed;
+      color: var(--display);
+      display: grid; place-items: center;
+    }
+    .phone {
+      width: min(420px, 92vw); aspect-ratio: 9/19.5; max-height: 92vh;
+      border-radius: 44px; background: linear-gradient(180deg, #0a0a0a, #050505);
+      box-shadow: 0 30px 80px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.05);
+      position: relative; padding: 18px; overflow: hidden;
+    }
+    .notch { position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+      width: 40%; height: 26px; background: #111; border-radius: 14px; box-shadow: inset 0 1px 2px rgba(255,255,255,.08);
+    }
+    .calc {
+      position: absolute; inset: 52px 14px 14px 14px;
+      display: grid; grid-template-rows: 1fr auto; gap: 12px;
+    }
+    .display {
+      font-variant-numeric: tabular-nums; text-align: right; padding: 10px 12px;
+      display: flex; align-items: end; justify-content: end;
+    }
+    .display .value { font-size: clamp(28px, 8vw, 56px); line-height: 1.1; word-break: break-all; }
+    .keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    button {
+      -webkit-tap-highlight-color: transparent;
+      appearance: none; border: 0; border-radius: 24px; font-size: 22px; height: 64px;
+      color: #fff; cursor: pointer; box-shadow: var(--shadow);
+      transition: transform .03s ease, filter .2s ease, background .2s ease, color .2s ease;
+    }
+    button:active { transform: scale(.98); filter: brightness(1.05); }
+    .btn-num { background: linear-gradient(180deg, #2b2b2b, #1f1f1f); }
+    .btn-fn  { background: linear-gradient(180deg, #b9b9b9, #9c9c9c); color: #000; }
+    .btn-op  { background: linear-gradient(180deg, #ffa726, #f57c00); }
+    .btn-op.active { background: linear-gradient(180deg, var(--btn-op-active), #ffb74d); color: #000; }
+    .btn-zero { grid-column: span 2; text-align: left; padding-left: 24px; }
+    .footer { position: absolute; bottom: 8px; left: 0; right: 0; text-align: center; font-size: 11px; opacity: .45; }
+    @media (max-height:700px) { button{height:58px} .display .value{font-size:clamp(22px,7vw,48px)} }
+  </style>
+</head>
+<body>
+  <main class="phone" role="application" aria-label="iOS26 Calculator">
+    <div class="notch" aria-hidden="true"></div>
+    <section class="calc">
+      <div class="display" aria-live="polite" aria-atomic="true">
+        <div id="display" class="value">0</div>
+      </div>
+      <div class="keys" id="keys" role="group" aria-label="клавиши калькулятора">
+        <!-- Row 1 -->
+        <button class="btn-fn" data-action="clear" aria-label="Очистить">AC</button>
+        <button class="btn-fn" data-action="toggle-sign" aria-label="Сменить знак">±</button>
+        <button class="btn-fn" data-action="percent" aria-label="Процент">%</button>
+        <button class="btn-op" data-op="/" aria-label="Деление">÷</button>
+        <!-- Row 2 -->
+        <button class="btn-num" data-digit="7">7</button>
+        <button class="btn-num" data-digit="8">8</button>
+        <button class="btn-num" data-digit="9">9</button>
+        <button class="btn-op" data-op="*" aria-label="Умножение">×</button>
+        <!-- Row 3 -->
+        <button class="btn-num" data-digit="4">4</button>
+        <button class="btn-num" data-digit="5">5</button>
+        <button class="btn-num" data-digit="6">6</button>
+        <button class="btn-op" data-op="-" aria-label="Вычитание">−</button>
+        <!-- Row 4 -->
+        <button class="btn-num" data-digit="1">1</button>
+        <button class="btn-num" data-digit="2">2</button>
+        <button class="btn-num" data-digit="3">3</button>
+        <button class="btn-op" data-op="+" aria-label="Сложение">+</button>
+        <!-- Row 5 -->
+        <button class="btn-num btn-zero" data-digit="0">0</button>
+        <button class="btn-num" data-dot=".">.</button>
+        <button class="btn-op" data-action="equals" aria-label="Равно">=</button>
+      </div>
+    </section>
+    <div class="footer">iOS‑style • GitHub Pages ready • Клавиатура: 0‑9, + − × ÷, Enter, Backspace</div>
+  </main>
+  <script>
+    (function(){
+      const displayEl = document.getElementById('display');
+      const keys = document.getElementById('keys');
+
+      const state = {
+        display: '0',
+        first: null,
+        operator: null,
+        waitingForSecond: false,
+        justEvaluated: false,
+      };
+
+      function format(nStr){
+        // Avoid scientific notation for up to ~12 digits
+        if (typeof nStr !== 'string') nStr = String(nStr);
+        if (nStr === 'Infinity' || nStr === '-Infinity' || nStr === 'NaN') return 'Error';
+        const [intPart, decPart] = nStr.split('.');
+        const intFmt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '\u202F');
+        return decPart ? `${intFmt}.${decPart}` : intFmt;
+      }
+
+      function setDisplay(val){
+        // Clamp and tidy
+        let s = String(val);
+        if (s.length > 16){
+          const num = Number(s);
+          if (!Number.isFinite(num)) s = 'Error';
+          else s = num.toExponential(8).replace('+', '');
+        }
+        state.display = s;
+        displayEl.textContent = format(s);
+      }
+
+      function clear(){
+        state.display = '0';
+        state.first = null;
+        state.operator = null;
+        state.waitingForSecond = false;
+        state.justEvaluated = false;
+        document.querySelectorAll('.btn-op').forEach(b=>b.classList.remove('active'));
+        setDisplay('0');
+      }
+
+      function inputDigit(d){
+        if (state.waitingForSecond){
+          state.display = d;
+          state.waitingForSecond = false;
+        } else if (state.justEvaluated){
+          state.display = d;
+          state.justEvaluated = false;
+          state.first = null; state.operator = null;
+        } else {
+          state.display = state.display === '0' ? d : state.display + d;
+        }
+        setDisplay(state.display);
+      }
+
+      function inputDot(){
+        if (state.waitingForSecond){
+          state.display = '0.';
+          state.waitingForSecond = false;
+          setDisplay(state.display);
+          return;
+        }
+        if (!state.display.includes('.')){
+          state.display += '.';
+          setDisplay(state.display);
+        }
+      }
+
+      function toggleSign(){
+        if (state.display === '0') return;
+        if (state.display.startsWith('-')) setDisplay(state.display.slice(1));
+        else setDisplay('-' + state.display);
+      }
+
+      function percent(){
+        const num = Number(state.display);
+        if (!Number.isFinite(num)) return;
+        setDisplay(String(num / 100));
+      }
+
+      function operate(op){
+        const current = Number(state.display);
+        if (!Number.isFinite(current)) return;
+
+        const opButtons = document.querySelectorAll('.btn-op');
+        opButtons.forEach(b=>b.classList.remove('active'));
+
+        if (state.operator && state.waitingForSecond){
+          // Change operator without losing first
+          state.operator = op;
+        } else if (state.first == null){
+          state.first = current;
+        } else if (state.operator){
+          const result = compute(state.first, current, state.operator);
+          setDisplay(result);
+          state.first = Number(result);
+        }
+        state.operator = op;
+        state.waitingForSecond = true;
+        state.justEvaluated = false;
+        // mark active
+        const btn = Array.from(opButtons).find(b=>b.dataset.op===op);
+        if (btn) btn.classList.add('active');
+      }
+
+      function equals(){
+        if (state.operator == null || state.waitingForSecond) return;
+        const second = Number(state.display);
+        const result = compute(state.first, second, state.operator);
+        setDisplay(result);
+        state.first = null; state.operator = null;
+        state.justEvaluated = true; state.waitingForSecond = false;
+        document.querySelectorAll('.btn-op').forEach(b=>b.classList.remove('active'));
+      }
+
+      function compute(a, b, op){
+        let out;
+        switch(op){
+          case '+': out = a + b; break;
+          case '-': out = a - b; break;
+          case '*': out = a * b; break;
+          case '/': out = b === 0 ? NaN : a / b; break;
+          default: out = b;
+        }
+        // Tidy floating point (e.g., 0.1+0.2)
+        out = Math.round(out * 1e12) / 1e12;
+        return String(out);
+      }
+
+      // Event handlers
+      keys.addEventListener('click', (e)=>{
+        const t = e.target.closest('button');
+        if (!t) return;
+        if (t.dataset.digit) return inputDigit(t.dataset.digit);
+        if (t.dataset.dot!==undefined) return inputDot();
+        if (t.dataset.op) return operate(t.dataset.op);
+        if (t.dataset.action === 'clear') return clear();
+        if (t.dataset.action === 'toggle-sign') return toggleSign();
+        if (t.dataset.action === 'percent') return percent();
+        if (t.dataset.action === 'equals') return equals();
+      });
+
+      // Keyboard support
+      window.addEventListener('keydown', (e)=>{
+        const { key } = e;
+        if (/^\d$/.test(key)) return inputDigit(key);
+        if (key === ',' || key === '.') return inputDot();
+        if (key === '+') return operate('+');
+        if (key === '-') return operate('-');
+        if (key === '*' || key === 'x' || key === 'X') return operate('*');
+        if (key === '/' || key === '÷') return operate('/');
+        if (key === 'Enter' || key === '=') return equals();
+        if (key === 'Backspace') {
+          if (state.waitingForSecond || state.justEvaluated) return; 
+          if (state.display.length <= 1 || (state.display.length === 2 && state.display.startsWith('-'))) setDisplay('0');
+          else setDisplay(state.display.slice(0, -1));
+          return;
+        }
+        if (key.toLowerCase() === 'c' || key === 'Escape') return clear();
+        if (key === '%') return percent();
+      });
+
+      // Init
+      clear();
+    })();
+  </script>
+
+  <!--
+  =============================
+  Развертывание на GitHub Pages
+  =============================
+  1) Создайте репозиторий, напр.: ios26-calculator
+  2) Сохраните этот файл как index.html в корне репозитория.
+  3) Загрузите в GitHub (через веб‑интерфейс или git):
+     git init
+     git add index.html
+     git commit -m "feat: iOS26 calculator"
+     git branch -M main
+     git remote add origin https://github.com/<USER>/ios26-calculator.git
+     git push -u origin main
+  4) В GitHub: Settings → Pages → Build and deployment: Source = Deploy from a branch,
+     Branch = main / root. Нажмите Save.
+  5) Страница будет доступна по адресу: https://<USER>.github.io/ios26-calculator/
+  -->
+</body>
+</html>
